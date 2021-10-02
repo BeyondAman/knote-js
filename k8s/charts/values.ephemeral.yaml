@@ -1,0 +1,38 @@
+ephemeral: true
+
+application:
+  name: application
+  image: "amanupadhyay/knote-application-ephemeral:v1"
+  port: 3000
+
+  config: 
+    MINIO_HOST: "minio"
+    NODE_ENV: "production"
+
+  secrets:
+    MONGO_URL: mongodb://mongo:27017/dev
+    MINIO_ACCESS_KEY: mykey
+    MINIO_SECRET_KEY: mysecret
+
+  healthcheck:
+    enabled: true
+    api: /
+
+mongo:
+  enabled: true
+  image: mongo:3.6.17-xenial
+  port: "27017"
+  storage:
+    size: 256Mi
+    class: gp2
+
+minio:
+  enabled: true
+  image: minio/minio:RELEASE.2020-03-14T02-21-58Z
+  port: "9000"
+  env:
+    access_key: mykey
+    secret_key: mysecret
+  storage:
+    size: 256Mi
+    class: gp2

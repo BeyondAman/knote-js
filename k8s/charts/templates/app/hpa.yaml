@@ -1,0 +1,15 @@
+{{- if .Values.application.scaling }}
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+ name: {{ include "knote-demo.app-name" . }}-hpa
+spec:
+ scaleTargetRef:
+   apiVersion: apps/v1
+   kind: Deployment
+   name: {{ include "knote-demo.app-name" . }}
+ minReplicas: {{ .Values.application.scaling.min_replicas }}
+ maxReplicas: {{ .Values.application.scaling.max_replicas }}
+ targetCPUUtilizationPercentage: {{ .Values.application.scaling.cpu_utilization }}
+{{ end }}
+ 

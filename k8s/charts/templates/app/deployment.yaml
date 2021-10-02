@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name:  {{ include "knote-demo.app-name" . }}
+  labels:
+    app:  {{ include "knote-demo.app-name" . }}
+    {{- include "knote-demo.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      app:  {{ include "knote-demo.app-name" . }}
+  template:
+    metadata:
+      labels:
+        app:  {{ include "knote-demo.app-name" . }}
+    spec:
+      containers:
+      - name:  {{ include "knote-demo.app-name" . }}
+        image: {{ .Values.application.image }}
+        ports:
+        - containerPort: {{ .Values.application.port }}
+        envFrom:
+          - configMapRef:
+                name:  {{ include "knote-demo.app-name" . }}
+          - secretRef:
+                name:  {{ include "knote-demo.app-name" . }}
+        {{- if .Values.application.healthcheck.enabled }}
+        livenessProbe:
+          httpGet:
+            path: {{ .Values.application.healthcheck.api }}
+            port: {{ .Values.application.port }}
+          initialDelaySeconds: 5
+          periodSeconds: 15
+        readinessProbe:
+          httpGet:
+            path: {{ .Values.application.healthcheck.api }}
+            port: {{ .Values.application.port }}
+          initialDelaySeconds: 5
+          periodSeconds: 15
+      {{ end }}

@@ -1,0 +1,13 @@
+{{- if .Values.minio.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio
+spec:
+  ports:
+  - port: {{ .Values.minio.port }}
+    targetPort: {{ .Values.minio.port }}
+    name: minio
+  selector:
+    app: minio
+{{ end }}

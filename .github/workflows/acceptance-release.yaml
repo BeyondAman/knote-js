@@ -1,0 +1,69 @@
+name: Acceptance - Build, Publish, and Deploy
+
+on:
+  push:
+    branches: [ acceptance ]
+    paths: 
+    - 'application/**'
+    - 'k8s/charts/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Build, Publish, and Deploy
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Start Deployment
+        uses: bobheadxi/deployments@v0.4.3
+        id: deployment
+        with:
+          step: start
+          token: ${{ secrets.GITHUB_TOKEN }}
+          env: acceptance
+
+      - name: docker login
+        env:
+          DOCKER_USER: ${{secrets.DOCKER_USER}}
+          DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
+        run: |
+          docker login -u $DOCKER_USER -p $DOCKER_PASSWORD 
+
+      - name: Application - Build, tag, and push image to Dockerhub
+        run: |
+          # Build a docker image
+          git_hash=$(git rev-parse --short "$GITHUB_SHA")
+
+          latest_image="$DOCKER_REGISTRY/$DOCKER_REPOSITORY:$git_hash"
+          cd application/ && docker build -t $latest_image .
+
+          echo "Pushing image to dockerhub..."
+          docker push $latest_image
+
+          # Update Image tag in values.acceptance.yaml file
+          echo "updating image tag in values file..."
+          git_hash=$(git rev-parse --short "$GITHUB_SHA")
+
+          cd ../../ # get back to app root
+          image=$(cat ./k8s/charts/values.acceptance.yaml | grep $DOCKER_REPOSITORY | awk '{print $2}')
+          sed -i "s@$image@$latest_image@" ./k8s/charts/values.acceptance.yaml
+        env:
+          DOCKER_REGISTRY: ${{secrets.DOCKER_REGISTRY}}
+          DOCKER_REPOSITORY: knote-application
+          
+      - name: Commit and push changes
+        uses: devops-infra/action-commit-push@v0.3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          commit_message: Version updated
+
+      - name: Update Deployment Status
+        uses: bobheadxi/deployments@v0.4.3
+        if: always()
+        with:
+          step: finish
+          token: ${{ secrets.GITHUB_TOKEN }}
+          status: ${{ job.status }}
+          deployment_id: ${{ steps.deployment.outputs.deployment_id }}

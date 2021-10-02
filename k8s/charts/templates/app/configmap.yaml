@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "knote-demo.app-name" . }}
+  labels:
+    {{- include "knote-demo.labels" . | nindent 4 }}
+data:
+  PORT: {{ .Values.application.port | quote }}
+  MINIO_HOST: {{ .Values.application.config.MINIO_HOST }}
+  NODE_ENV: {{ .Values.application.config.NODE_ENV }}

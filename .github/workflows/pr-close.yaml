@@ -1,0 +1,46 @@
+name: Destroy Ephemeral Environment
+
+on:
+  pull_request:
+    types: [ closed ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      AWS_REGION: us-west-2
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    # Setup AWS CLI
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    # Setup Kubeconfig
+    - name: Setup kubeconfig
+      id: setup-kubeconfig
+      run: |
+        aws eks --region $AWS_REGION update-kubeconfig --name ${{ secrets.EKS_CLUSTER_NAME }}
+
+    - name: Delete Ephemeral Environment
+      run: |
+        # Install vCluster
+        curl -s -L "https://github.com/loft-sh/vcluster/releases/latest" | sed -nE 's!.*"([^"]*vcluster-linux-amd64)".*!https://github.com\1!p' | xargs -n 1 curl -L -o vcluster && chmod +x vcluster;
+        sudo mv vcluster /usr/local/bin;
+
+        # Delete the cluster
+        vcluster delete demo-pr-${{ github.event.pull_request.number }} --namespace test-ephemeral
+    
+    # Publish message to the PR
+    - name: Publish message to PR
+      uses: thollander/actions-comment-pull-request@v1
+      with:
+        message: |
+          Destroyed ephemeral environment
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

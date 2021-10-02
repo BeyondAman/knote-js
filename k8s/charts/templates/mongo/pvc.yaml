@@ -1,0 +1,12 @@
+{{- if .Values.mongo.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mongo-pvc
+spec:
+  accessModes: [ "ReadWriteOnce" ]
+  storageClassName: {{ .Values.mongo.storage.class }}
+  resources:
+    requests:
+      storage: {{ .Values.mongo.storage.size }}
+{{ end }}

@@ -1,0 +1,35 @@
+{{- if .Values.minio.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: minio
+spec:
+  selector:
+    matchLabels:
+      app: minio
+  template:
+    metadata:
+      labels:
+        app: minio
+    spec:
+      containers:
+        - name: minio
+          image: {{ .Values.minio.image }}
+          args:
+            - server
+            - /storage
+          env:
+            - name: MINIO_ACCESS_KEY
+              value: {{ .Values.minio.env.access_key }}
+            - name: MINIO_SECRET_KEY
+              value: {{ .Values.minio.env.secret_key }}
+          ports:
+            - containerPort: {{ .Values.minio.port }}
+          volumeMounts:
+          - name: storage
+            mountPath: /storage
+      volumes:
+        - name: storage
+          persistentVolumeClaim:
+            claimName: minio-pvc
+{{ end }}

@@ -1,0 +1,41 @@
+namespace: test
+ephemeral: false
+  
+application:
+  name: application
+  image: amanupadhyay/knote-application:047f755
+  port: 3000
+  
+  config: 
+    MINIO_HOST: "minio" # TODO: replace with s3 host
+    NODE_ENV: "production"
+
+  # obtained from AWS Secret Manager - using external secrets
+  # ref: https://github.com/external-secrets/external-secrets
+  secrets:
+    db_url:
+      key: demo/db_creds
+      name: MONGO_URL
+      property: MONGO_URL
+      version: latest
+
+  scaling:
+    min_replicas: 3
+    max_replicas: 5
+    cpu_utilization: 80
+
+  healthcheck:
+    enabled: true
+    api: /
+
+argo:
+  repo_url: "https://github.com/BeyondAman/knote-demo.git"
+  namespace: argocd
+  targetRevision: HEAD
+  valuesFile: "values.prod.yaml"
+  
+mongo:
+  enabled: false
+
+minio:
+  enabled: false

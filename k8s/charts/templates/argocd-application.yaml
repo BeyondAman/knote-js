@@ -1,0 +1,19 @@
+{{- if eq .Values.ephemeral false }}
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ include "knote-demo.name" . }}
+  namespace: {{ .Values.argo.namespace }}
+spec:
+  project: default
+  source:
+    repoURL: {{ .Values.argo.repo_url }}
+    targetRevision: {{ .Values.argo.targetRevision }}
+    path: k8s/charts/
+    helm:
+      valueFiles:
+      - {{ .Values.argo.valuesFile }}
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: {{ .Values.namespace }}
+{{ end }}
